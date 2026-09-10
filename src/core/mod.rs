@@ -4,4 +4,4 @@
 // SPDX-License-Identifier: MIT
 //
 
-pub mod power;
+pub mod property;

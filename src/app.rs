@@ -4,19 +4,22 @@
 // SPDX-License-Identifier: MIT
 //
 
-use relm4::{SimpleComponent, gtk::prelude::*, prelude::*};
+use relm4::{gtk::prelude::*, prelude::*};
 
-use crate::bar::BarModel;
+use crate::{bar::BarModel, services::power::PowerService};
 
 pub struct AppModel {
+    _power_service: PowerService,
+
     _bar: Controller<BarModel>,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for AppModel {
+#[relm4::component(pub, async)]
+impl AsyncComponent for AppModel {
     type Input = ();
     type Output = ();
     type Init = ();
+    type CommandOutput = ();
 
     view! {
         gtk::Window {
@@ -24,16 +27,22 @@ impl SimpleComponent for AppModel {
         }
     }
 
-    fn init(
+    async fn init(
         _init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        _sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
+        // TODO: Error Handling
+        let power_service = PowerService::new().await.unwrap();
+
         let bar = BarModel::builder().launch(()).detach();
 
-        let model = Self { _bar: bar };
+        let model = Self {
+            _power_service: power_service,
+            _bar: bar,
+        };
 
         let widgets = view_output!();
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 }

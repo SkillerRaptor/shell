@@ -4,8 +4,11 @@
 // SPDX-License-Identifier: MIT
 //
 
+#![allow(unused)]
+
 mod app;
 mod bar;
+mod core;
 mod notifications;
 mod osd;
 mod services;
@@ -16,5 +19,5 @@ use crate::app::AppModel;
 
 fn main() {
     let app = RelmApp::new("dev.skillerraptor.shell");
-    app.visible_on_activate(false).run::<AppModel>(());
+    app.visible_on_activate(false).run_async::<AppModel>(());
 }
