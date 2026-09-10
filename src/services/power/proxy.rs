@@ -109,9 +109,6 @@ pub trait Device {
     fn charge_cycles(&self) -> zbus::Result<i32>;
 
     #[zbus(property)]
-    fn luminosity(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
     fn time_to_empty(&self) -> zbus::Result<i64>;
 
     #[zbus(property)]
@@ -167,9 +164,6 @@ pub trait Device {
 
     #[zbus(property)]
     fn voltage_max_design(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn capacity_level(&self) -> zbus::Result<String>;
 }
 
 #[zbus::proxy(

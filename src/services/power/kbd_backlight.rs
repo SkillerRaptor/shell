@@ -74,7 +74,7 @@ impl KbdBacklight {
         })
     }
 
-    async fn set_brightness(&self, value: i32) -> Result<()> {
+    pub async fn set_brightness(&self, value: i32) -> Result<()> {
         self.kbd_backlight_proxy.set_brightness(value).await?;
         Ok(())
     }

@@ -39,7 +39,6 @@ pub struct Device {
     pub energy_rate: Property<f64>,
     pub voltage: Property<f64>,
     pub charge_cycles: Property<i32>,
-    pub luminosity: Property<f64>,
     pub time_to_empty: Property<i64>,
     pub time_to_full: Property<i64>,
     pub percentage: Property<f64>,
@@ -59,7 +58,6 @@ pub struct Device {
     pub charge_threshold_settings_supported: Property<u32>,
     pub voltage_min_design: Property<f64>,
     pub voltage_max_design: Property<f64>,
-    pub capacity_level: Property<String>,
 }
 
 impl Device {
@@ -90,7 +88,6 @@ impl Device {
         let energy_rate = Property::new(device_proxy.energy_rate().await?);
         let voltage = Property::new(device_proxy.voltage().await?);
         let charge_cycles = Property::new(device_proxy.charge_cycles().await?);
-        let luminosity = Property::new(device_proxy.luminosity().await?);
         let time_to_empty = Property::new(device_proxy.time_to_empty().await?);
         let time_to_full = Property::new(device_proxy.time_to_full().await?);
         let percentage = Property::new(device_proxy.percentage().await?);
@@ -113,7 +110,6 @@ impl Device {
             Property::new(device_proxy.charge_threshold_settings_supported().await?);
         let voltage_min_design = Property::new(device_proxy.voltage_min_design().await?);
         let voltage_max_design = Property::new(device_proxy.voltage_max_design().await?);
-        let capacity_level = Property::new(device_proxy.capacity_level().await?);
 
         {
             let native_path = native_path.clone();
@@ -133,7 +129,6 @@ impl Device {
             let energy_rate = energy_rate.clone();
             let voltage = voltage.clone();
             let charge_cycles = charge_cycles.clone();
-            let luminosity = luminosity.clone();
             let time_to_empty = time_to_empty.clone();
             let time_to_full = time_to_full.clone();
             let percentage = percentage.clone();
@@ -153,7 +148,6 @@ impl Device {
             let charge_threshold_settings_supported = charge_threshold_settings_supported.clone();
             let voltage_min_design = voltage_min_design.clone();
             let voltage_max_design = voltage_max_design.clone();
-            let capacity_level = capacity_level.clone();
 
             let mut native_path_stream = device_proxy.receive_native_path_changed().await;
             let mut vendor_stream = device_proxy.receive_vendor_changed().await;
@@ -173,7 +167,6 @@ impl Device {
             let mut energy_rate_stream = device_proxy.receive_energy_rate_changed().await;
             let mut voltage_stream = device_proxy.receive_voltage_changed().await;
             let mut charge_cycles_stream = device_proxy.receive_charge_cycles_changed().await;
-            let mut luminosity_stream = device_proxy.receive_luminosity_changed().await;
             let mut time_to_empty_stream = device_proxy.receive_time_to_empty_changed().await;
             let mut time_to_full_stream = device_proxy.receive_time_to_full_changed().await;
             let mut percentage_stream = device_proxy.receive_percentage_changed().await;
@@ -203,7 +196,6 @@ impl Device {
                 device_proxy.receive_voltage_min_design_changed().await;
             let mut voltage_max_design_stream =
                 device_proxy.receive_voltage_max_design_changed().await;
-            let mut capacity_level_stream = device_proxy.receive_capacity_level_changed().await;
 
             relm4::spawn(async move {
                 loop {
@@ -291,11 +283,6 @@ impl Device {
                         Some(change) = charge_cycles_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 charge_cycles.write(value);
-                            }
-                        }
-                        Some(change) = luminosity_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                luminosity.write(value);
                             }
                         }
                         Some(change) = time_to_empty_stream.next() => {
@@ -393,11 +380,6 @@ impl Device {
                                 voltage_max_design.write(value);
                             }
                         }
-                        Some(change) = capacity_level_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                capacity_level.write(value);
-                            }
-                        }
                         _ = cancellation_token.cancelled() => {
                             break;
                         }
@@ -427,7 +409,6 @@ impl Device {
             energy_rate,
             voltage,
             charge_cycles,
-            luminosity,
             time_to_empty,
             time_to_full,
             percentage,
@@ -447,7 +428,6 @@ impl Device {
             charge_threshold_settings_supported,
             voltage_min_design,
             voltage_max_design,
-            capacity_level,
         })
     }
 
