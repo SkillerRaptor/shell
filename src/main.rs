@@ -4,4 +4,17 @@
 // SPDX-License-Identifier: MIT
 //
 
-fn main() {}
+mod app;
+mod bar;
+mod notifications;
+mod osd;
+mod services;
+
+use relm4::RelmApp;
+
+use crate::app::AppModel;
+
+fn main() {
+    let app = RelmApp::new("dev.skillerraptor.shell");
+    app.visible_on_activate(false).run::<AppModel>(());
+}
