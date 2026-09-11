@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 //
 
+use std::time::Duration;
+
 use anyhow::Result;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
@@ -13,7 +15,7 @@ use crate::{
     core::property::Property,
     services::battery::{
         proxy::DeviceProxy,
-        types::{State, Type, WarningLevel},
+        types::{State, Type},
     },
 };
 
@@ -26,10 +28,9 @@ pub struct DisplayDevice {
     pub energy: Property<f64>,
     pub energy_full: Property<f64>,
     pub energy_rate: Property<f64>,
-    pub time_to_empty: Property<i64>,
-    pub time_to_full: Property<i64>,
+    pub time_to_empty: Property<Duration>,
+    pub time_to_full: Property<Duration>,
     pub is_present: Property<bool>,
-    pub warning_level: Property<WarningLevel>,
 }
 
 impl DisplayDevice {
@@ -49,10 +50,13 @@ impl DisplayDevice {
         let energy = Property::new(device_proxy.energy().await?);
         let energy_full = Property::new(device_proxy.energy_full().await?);
         let energy_rate = Property::new(device_proxy.energy_rate().await?);
-        let time_to_empty = Property::new(device_proxy.time_to_empty().await?);
-        let time_to_full = Property::new(device_proxy.time_to_full().await?);
+        let time_to_empty = Property::new(Duration::from_secs(
+            device_proxy.time_to_empty().await? as u64,
+        ));
+        let time_to_full = Property::new(Duration::from_secs(
+            device_proxy.time_to_full().await? as u64,
+        ));
         let is_present = Property::new(device_proxy.is_present().await?);
-        let warning_level = Property::new(WarningLevel::from(device_proxy.warning_level().await?));
 
         {
             let r#type = r#type.clone();
@@ -64,7 +68,6 @@ impl DisplayDevice {
             let time_to_empty = time_to_empty.clone();
             let time_to_full = time_to_full.clone();
             let is_present = is_present.clone();
-            let warning_level = warning_level.clone();
 
             let mut type_stream = device_proxy.receive_type_changed().await;
             let mut state_stream = device_proxy.receive_state_changed().await;
@@ -75,7 +78,6 @@ impl DisplayDevice {
             let mut time_to_empty_stream = device_proxy.receive_time_to_empty_changed().await;
             let mut time_to_full_stream = device_proxy.receive_time_to_full_changed().await;
             let mut is_present_stream = device_proxy.receive_is_present_changed().await;
-            let mut warning_level_stream = device_proxy.receive_warning_level_changed().await;
 
             relm4::spawn(async move {
                 loop {
@@ -112,22 +114,19 @@ impl DisplayDevice {
                         }
                         Some(change) = time_to_empty_stream.next() => {
                             if let Ok(value) = change.get().await {
+                                let value = Duration::from_secs(value as u64);
                                 time_to_empty.write(value);
                             }
                         }
                         Some(change) = time_to_full_stream.next() => {
                             if let Ok(value) = change.get().await {
+                                let value = Duration::from_secs(value as u64);
                                 time_to_full.write(value);
                             }
                         }
                         Some(change) = is_present_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 is_present.write(value);
-                            }
-                        }
-                        Some(change) = warning_level_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                warning_level.write(WarningLevel::from(value));
                             }
                         }
                         _ = cancellation_token.cancelled() => {
@@ -150,7 +149,6 @@ impl DisplayDevice {
             time_to_empty,
             time_to_full,
             is_present,
-            warning_level,
         })
     }
 }

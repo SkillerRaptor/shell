@@ -101,30 +101,6 @@ impl From<u32> for State {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum WarningLevel {
-    Unknown,
-    None,
-    Discharging,
-    Low,
-    Critical,
-    Action,
-}
-
-impl From<u32> for WarningLevel {
-    fn from(value: u32) -> Self {
-        match value {
-            0 => Self::Unknown,
-            1 => Self::None,
-            2 => Self::Discharging,
-            3 => Self::Low,
-            4 => Self::Critical,
-            5 => Self::Action,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BatteryLevel {
     Unknown,
     None,

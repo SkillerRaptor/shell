@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 //
 
+use std::time::Duration;
+
 use anyhow::Result;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
@@ -13,7 +15,7 @@ use crate::{
     core::property::Property,
     services::battery::{
         proxy::DeviceProxy,
-        types::{BatteryLevel, State, Type, WarningLevel},
+        types::{BatteryLevel, State, Type},
     },
 };
 
@@ -35,25 +37,21 @@ pub struct Battery {
     pub energy_full: Property<f64>,
     pub energy_full_design: Property<f64>,
     pub energy_rate: Property<f64>,
-    pub voltage: Property<f64>,
     pub charge_cycles: Property<i32>,
-    pub time_to_empty: Property<i64>,
-    pub time_to_full: Property<i64>,
+    pub time_to_empty: Property<Duration>,
+    pub time_to_full: Property<Duration>,
     pub percentage: Property<f64>,
     pub temperature: Property<f64>,
     pub is_present: Property<bool>,
     pub state: Property<State>,
     pub is_rechargeable: Property<bool>,
     pub capacity: Property<f64>,
-    pub warning_level: Property<WarningLevel>,
     pub battery_level: Property<BatteryLevel>,
     pub charge_start_threshold: Property<u32>,
     pub charge_end_threshold: Property<u32>,
     pub charge_threshold_enabled: Property<bool>,
     pub charge_threshold_supported: Property<bool>,
     pub charge_threshold_settings_supported: Property<u32>,
-    pub voltage_min_design: Property<f64>,
-    pub voltage_max_design: Property<f64>,
 }
 
 impl Battery {
@@ -80,17 +78,19 @@ impl Battery {
         let energy_full = Property::new(device_proxy.energy_full().await?);
         let energy_full_design = Property::new(device_proxy.energy_full_design().await?);
         let energy_rate = Property::new(device_proxy.energy_rate().await?);
-        let voltage = Property::new(device_proxy.voltage().await?);
         let charge_cycles = Property::new(device_proxy.charge_cycles().await?);
-        let time_to_empty = Property::new(device_proxy.time_to_empty().await?);
-        let time_to_full = Property::new(device_proxy.time_to_full().await?);
+        let time_to_empty = Property::new(Duration::from_secs(
+            device_proxy.time_to_empty().await? as u64,
+        ));
+        let time_to_full = Property::new(Duration::from_secs(
+            device_proxy.time_to_full().await? as u64,
+        ));
         let percentage = Property::new(device_proxy.percentage().await?);
         let temperature = Property::new(device_proxy.temperature().await?);
         let is_present = Property::new(device_proxy.is_present().await?);
         let state = Property::new(State::from(device_proxy.state().await?));
         let is_rechargeable = Property::new(device_proxy.is_rechargeable().await?);
         let capacity = Property::new(device_proxy.capacity().await?);
-        let warning_level = Property::new(WarningLevel::from(device_proxy.warning_level().await?));
         let battery_level = Property::new(BatteryLevel::from(device_proxy.battery_level().await?));
         let charge_start_threshold = Property::new(device_proxy.charge_start_threshold().await?);
         let charge_end_threshold = Property::new(device_proxy.charge_end_threshold().await?);
@@ -100,8 +100,6 @@ impl Battery {
             Property::new(device_proxy.charge_threshold_supported().await?);
         let charge_threshold_settings_supported =
             Property::new(device_proxy.charge_threshold_settings_supported().await?);
-        let voltage_min_design = Property::new(device_proxy.voltage_min_design().await?);
-        let voltage_max_design = Property::new(device_proxy.voltage_max_design().await?);
 
         {
             let cancellation_token = cancellation_token.clone();
@@ -119,7 +117,6 @@ impl Battery {
             let energy_full = energy_full.clone();
             let energy_full_design = energy_full_design.clone();
             let energy_rate = energy_rate.clone();
-            let voltage = voltage.clone();
             let charge_cycles = charge_cycles.clone();
             let time_to_empty = time_to_empty.clone();
             let time_to_full = time_to_full.clone();
@@ -129,15 +126,12 @@ impl Battery {
             let state = state.clone();
             let is_rechargeable = is_rechargeable.clone();
             let capacity = capacity.clone();
-            let warning_level = warning_level.clone();
             let battery_level = battery_level.clone();
             let charge_start_threshold = charge_start_threshold.clone();
             let charge_end_threshold = charge_end_threshold.clone();
             let charge_threshold_enabled = charge_threshold_enabled.clone();
             let charge_threshold_supported = charge_threshold_supported.clone();
             let charge_threshold_settings_supported = charge_threshold_settings_supported.clone();
-            let voltage_min_design = voltage_min_design.clone();
-            let voltage_max_design = voltage_max_design.clone();
 
             let mut native_path_stream = device_proxy.receive_native_path_changed().await;
             let mut vendor_stream = device_proxy.receive_vendor_changed().await;
@@ -153,7 +147,6 @@ impl Battery {
             let mut energy_full_design_stream =
                 device_proxy.receive_energy_full_design_changed().await;
             let mut energy_rate_stream = device_proxy.receive_energy_rate_changed().await;
-            let mut voltage_stream = device_proxy.receive_voltage_changed().await;
             let mut charge_cycles_stream = device_proxy.receive_charge_cycles_changed().await;
             let mut time_to_empty_stream = device_proxy.receive_time_to_empty_changed().await;
             let mut time_to_full_stream = device_proxy.receive_time_to_full_changed().await;
@@ -163,7 +156,6 @@ impl Battery {
             let mut state_stream = device_proxy.receive_state_changed().await;
             let mut is_rechargeable_stream = device_proxy.receive_is_rechargeable_changed().await;
             let mut capacity_stream = device_proxy.receive_capacity_changed().await;
-            let mut warning_level_stream = device_proxy.receive_warning_level_changed().await;
             let mut battery_level_stream = device_proxy.receive_battery_level_changed().await;
             let mut charge_start_threshold_stream =
                 device_proxy.receive_charge_start_threshold_changed().await;
@@ -178,10 +170,6 @@ impl Battery {
             let mut charge_threshold_settings_supported_stream = device_proxy
                 .receive_charge_threshold_settings_supported_changed()
                 .await;
-            let mut voltage_min_design_stream =
-                device_proxy.receive_voltage_min_design_changed().await;
-            let mut voltage_max_design_stream =
-                device_proxy.receive_voltage_max_design_changed().await;
 
             relm4::spawn(async move {
                 loop {
@@ -251,11 +239,6 @@ impl Battery {
                                 energy_rate.write(value);
                             }
                         }
-                        Some(change) = voltage_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                voltage.write(value);
-                            }
-                        }
                         Some(change) = charge_cycles_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 charge_cycles.write(value);
@@ -263,11 +246,13 @@ impl Battery {
                         }
                         Some(change) = time_to_empty_stream.next() => {
                             if let Ok(value) = change.get().await {
+                                let value = Duration::from_secs(value as u64);
                                 time_to_empty.write(value);
                             }
                         }
                         Some(change) = time_to_full_stream.next() => {
                             if let Ok(value) = change.get().await {
+                                let value = Duration::from_secs(value as u64);
                                 time_to_full.write(value);
                             }
                         }
@@ -301,11 +286,6 @@ impl Battery {
                                 capacity.write(value);
                             }
                         }
-                        Some(change) = warning_level_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                warning_level.write(WarningLevel::from(value));
-                            }
-                        }
                         Some(change) = battery_level_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 battery_level.write(BatteryLevel::from(value));
@@ -336,16 +316,6 @@ impl Battery {
                                 charge_threshold_settings_supported.write(value);
                             }
                         }
-                        Some(change) = voltage_min_design_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                voltage_min_design.write(value);
-                            }
-                        }
-                        Some(change) = voltage_max_design_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                voltage_max_design.write(value);
-                            }
-                        }
                         _ = cancellation_token.cancelled() => {
                             break;
                         }
@@ -372,7 +342,6 @@ impl Battery {
             energy_full,
             energy_full_design,
             energy_rate,
-            voltage,
             charge_cycles,
             time_to_empty,
             time_to_full,
@@ -382,15 +351,12 @@ impl Battery {
             state,
             is_rechargeable,
             capacity,
-            warning_level,
             battery_level,
             charge_start_threshold,
             charge_end_threshold,
             charge_threshold_enabled,
             charge_threshold_supported,
             charge_threshold_settings_supported,
-            voltage_min_design,
-            voltage_max_design,
         })
     }
 

@@ -73,9 +73,6 @@ pub trait Device {
     fn energy_rate(&self) -> zbus::Result<f64>;
 
     #[zbus(property)]
-    fn voltage(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
     fn charge_cycles(&self) -> zbus::Result<i32>;
 
     #[zbus(property)]
@@ -103,9 +100,6 @@ pub trait Device {
     fn capacity(&self) -> zbus::Result<f64>;
 
     #[zbus(property)]
-    fn warning_level(&self) -> zbus::Result<u32>;
-
-    #[zbus(property)]
     fn battery_level(&self) -> zbus::Result<u32>;
 
     #[zbus(property)]
@@ -122,10 +116,4 @@ pub trait Device {
 
     #[zbus(property)]
     fn charge_threshold_settings_supported(&self) -> zbus::Result<u32>;
-
-    #[zbus(property)]
-    fn voltage_min_design(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn voltage_max_design(&self) -> zbus::Result<f64>;
 }
