@@ -101,32 +101,6 @@ impl From<u32> for State {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Technology {
-    Unknown,
-    LithiumIon,
-    LithiumPolymer,
-    LithiumIronPhosphate,
-    LeadAcid,
-    NickelCadmium,
-    NickelMetalHydride,
-}
-
-impl From<u32> for Technology {
-    fn from(value: u32) -> Self {
-        match value {
-            0 => Self::Unknown,
-            1 => Self::LithiumIon,
-            2 => Self::LithiumPolymer,
-            3 => Self::LithiumIronPhosphate,
-            4 => Self::LeadAcid,
-            5 => Self::NickelCadmium,
-            6 => Self::NickelMetalHydride,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WarningLevel {
     Unknown,
     None,

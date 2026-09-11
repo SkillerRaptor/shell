@@ -11,16 +11,16 @@ use zbus::{Connection, zvariant::OwnedObjectPath};
 
 use crate::{
     core::property::Property,
-    services::power::{
+    services::battery::{
         proxy::DeviceProxy,
-        types::{BatteryLevel, State, Technology, Type, WarningLevel},
+        types::{BatteryLevel, State, Type, WarningLevel},
     },
 };
 
-pub struct Device {
+pub struct Battery {
+    pub(super) path: OwnedObjectPath,
+    cancellation_token: CancellationToken,
     device_proxy: DeviceProxy<'static>,
-
-    pub path: OwnedObjectPath,
 
     pub native_path: Property<String>,
     pub vendor: Property<String>,
@@ -29,8 +29,6 @@ pub struct Device {
     pub update_time: Property<u64>,
     pub r#type: Property<Type>,
     pub power_supply: Property<bool>,
-    pub has_history: Property<bool>,
-    pub has_statistics: Property<bool>,
     pub online: Property<bool>,
     pub energy: Property<f64>,
     pub energy_empty: Property<f64>,
@@ -47,10 +45,8 @@ pub struct Device {
     pub state: Property<State>,
     pub is_rechargeable: Property<bool>,
     pub capacity: Property<f64>,
-    pub technology: Property<Technology>,
     pub warning_level: Property<WarningLevel>,
     pub battery_level: Property<BatteryLevel>,
-    pub icon_name: Property<String>,
     pub charge_start_threshold: Property<u32>,
     pub charge_end_threshold: Property<u32>,
     pub charge_threshold_enabled: Property<bool>,
@@ -60,7 +56,7 @@ pub struct Device {
     pub voltage_max_design: Property<f64>,
 }
 
-impl Device {
+impl Battery {
     pub async fn new(
         connection: &Connection,
         path: OwnedObjectPath,
@@ -78,8 +74,6 @@ impl Device {
         let update_time = Property::new(device_proxy.update_time().await?);
         let r#type = Property::new(Type::from(device_proxy.r#type().await?));
         let power_supply = Property::new(device_proxy.power_supply().await?);
-        let has_history = Property::new(device_proxy.has_history().await?);
-        let has_statistics = Property::new(device_proxy.has_statistics().await?);
         let online = Property::new(device_proxy.online().await?);
         let energy = Property::new(device_proxy.energy().await?);
         let energy_empty = Property::new(device_proxy.energy_empty().await?);
@@ -96,10 +90,8 @@ impl Device {
         let state = Property::new(State::from(device_proxy.state().await?));
         let is_rechargeable = Property::new(device_proxy.is_rechargeable().await?);
         let capacity = Property::new(device_proxy.capacity().await?);
-        let technology = Property::new(Technology::from(device_proxy.technology().await?));
         let warning_level = Property::new(WarningLevel::from(device_proxy.warning_level().await?));
         let battery_level = Property::new(BatteryLevel::from(device_proxy.battery_level().await?));
-        let icon_name = Property::new(device_proxy.icon_name().await?);
         let charge_start_threshold = Property::new(device_proxy.charge_start_threshold().await?);
         let charge_end_threshold = Property::new(device_proxy.charge_end_threshold().await?);
         let charge_threshold_enabled =
@@ -112,6 +104,8 @@ impl Device {
         let voltage_max_design = Property::new(device_proxy.voltage_max_design().await?);
 
         {
+            let cancellation_token = cancellation_token.clone();
+
             let native_path = native_path.clone();
             let vendor = vendor.clone();
             let model = model.clone();
@@ -119,8 +113,6 @@ impl Device {
             let update_time = update_time.clone();
             let r#type = r#type.clone();
             let power_supply = power_supply.clone();
-            let has_history = has_history.clone();
-            let has_statistics = has_statistics.clone();
             let online = online.clone();
             let energy = energy.clone();
             let energy_empty = energy_empty.clone();
@@ -137,10 +129,8 @@ impl Device {
             let state = state.clone();
             let is_rechargeable = is_rechargeable.clone();
             let capacity = capacity.clone();
-            let technology = technology.clone();
             let warning_level = warning_level.clone();
             let battery_level = battery_level.clone();
-            let icon_name = icon_name.clone();
             let charge_start_threshold = charge_start_threshold.clone();
             let charge_end_threshold = charge_end_threshold.clone();
             let charge_threshold_enabled = charge_threshold_enabled.clone();
@@ -156,8 +146,6 @@ impl Device {
             let mut update_time_stream = device_proxy.receive_update_time_changed().await;
             let mut type_stream = device_proxy.receive_type_changed().await;
             let mut power_supply_stream = device_proxy.receive_power_supply_changed().await;
-            let mut has_history_stream = device_proxy.receive_has_history_changed().await;
-            let mut has_statistics_stream = device_proxy.receive_has_statistics_changed().await;
             let mut online_stream = device_proxy.receive_online_changed().await;
             let mut energy_stream = device_proxy.receive_energy_changed().await;
             let mut energy_empty_stream = device_proxy.receive_energy_empty_changed().await;
@@ -175,10 +163,8 @@ impl Device {
             let mut state_stream = device_proxy.receive_state_changed().await;
             let mut is_rechargeable_stream = device_proxy.receive_is_rechargeable_changed().await;
             let mut capacity_stream = device_proxy.receive_capacity_changed().await;
-            let mut technology_stream = device_proxy.receive_technology_changed().await;
             let mut warning_level_stream = device_proxy.receive_warning_level_changed().await;
             let mut battery_level_stream = device_proxy.receive_battery_level_changed().await;
-            let mut icon_name_stream = device_proxy.receive_icon_name_changed().await;
             let mut charge_start_threshold_stream =
                 device_proxy.receive_charge_start_threshold_changed().await;
             let mut charge_end_threshold_stream =
@@ -233,16 +219,6 @@ impl Device {
                         Some(change) = power_supply_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 power_supply.write(value);
-                            }
-                        }
-                        Some(change) = has_history_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                has_history.write(value);
-                            }
-                        }
-                        Some(change) = has_statistics_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                has_statistics.write(value);
                             }
                         }
                         Some(change) = online_stream.next() => {
@@ -325,11 +301,6 @@ impl Device {
                                 capacity.write(value);
                             }
                         }
-                        Some(change) = technology_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                technology.write(Technology::from(value));
-                            }
-                        }
                         Some(change) = warning_level_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 warning_level.write(WarningLevel::from(value));
@@ -338,11 +309,6 @@ impl Device {
                         Some(change) = battery_level_stream.next() => {
                             if let Ok(value) = change.get().await {
                                 battery_level.write(BatteryLevel::from(value));
-                            }
-                        }
-                        Some(change) = icon_name_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                icon_name.write(value);
                             }
                         }
                         Some(change) = charge_start_threshold_stream.next() => {
@@ -390,6 +356,7 @@ impl Device {
 
         Ok(Self {
             path,
+            cancellation_token,
             device_proxy,
 
             native_path,
@@ -399,8 +366,6 @@ impl Device {
             update_time,
             r#type,
             power_supply,
-            has_history,
-            has_statistics,
             online,
             energy,
             energy_empty,
@@ -417,10 +382,8 @@ impl Device {
             state,
             is_rechargeable,
             capacity,
-            technology,
             warning_level,
             battery_level,
-            icon_name,
             charge_start_threshold,
             charge_end_threshold,
             charge_threshold_enabled,
@@ -431,31 +394,14 @@ impl Device {
         })
     }
 
-    pub async fn refresh(&self) -> Result<()> {
-        self.device_proxy.refresh().await?;
-        Ok(())
-    }
-
-    pub async fn get_history(
-        &self,
-        r#type: &str,
-        timespan: u32,
-        resolution: u32,
-    ) -> Result<Vec<(u32, f64, u32)>> {
-        let history = self
-            .device_proxy
-            .get_history(r#type, timespan, resolution)
-            .await?;
-        Ok(history)
-    }
-
-    pub async fn get_statistics(&self, r#type: &str) -> Result<Vec<(f64, f64)>> {
-        let statistics = self.device_proxy.get_statistics(r#type).await?;
-        Ok(statistics)
-    }
-
     pub async fn enable_charge_threshold(&self, enabled: bool) -> Result<()> {
         self.device_proxy.enable_charge_threshold(enabled).await?;
         Ok(())
+    }
+}
+
+impl Drop for Battery {
+    fn drop(&mut self) {
+        self.cancellation_token.cancel();
     }
 }

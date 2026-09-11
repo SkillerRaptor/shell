@@ -14,8 +14,6 @@ use zbus::zvariant::{ObjectPath, OwnedObjectPath};
 pub trait UPower {
     fn enumerate_devices(&self) -> zbus::Result<Vec<OwnedObjectPath>>;
 
-    fn enumerate_kbd_backlights(&self) -> zbus::Result<Vec<OwnedObjectPath>>;
-
     fn get_display_device(&self) -> zbus::Result<OwnedObjectPath>;
 
     #[zbus(signal)]
@@ -26,12 +24,6 @@ pub trait UPower {
 
     #[zbus(property)]
     fn on_battery(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn lid_is_closed(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn lid_is_present(&self) -> zbus::Result<bool>;
 }
 
 #[zbus::proxy(
@@ -39,17 +31,6 @@ pub trait UPower {
     default_service = "org.freedesktop.UPower"
 )]
 pub trait Device {
-    fn refresh(&self) -> zbus::Result<()>;
-
-    fn get_history(
-        &self,
-        r#type: &str,
-        timespan: u32,
-        resolution: u32,
-    ) -> zbus::Result<Vec<(u32, f64, u32)>>;
-
-    fn get_statistics(&self, r#type: &str) -> zbus::Result<Vec<(f64, f64)>>;
-
     fn enable_charge_threshold(&self, enabled: bool) -> zbus::Result<()>;
 
     #[zbus(property)]
@@ -72,12 +53,6 @@ pub trait Device {
 
     #[zbus(property)]
     fn power_supply(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn has_history(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn has_statistics(&self) -> zbus::Result<bool>;
 
     #[zbus(property)]
     fn online(&self) -> zbus::Result<bool>;
@@ -128,16 +103,10 @@ pub trait Device {
     fn capacity(&self) -> zbus::Result<f64>;
 
     #[zbus(property)]
-    fn technology(&self) -> zbus::Result<u32>;
-
-    #[zbus(property)]
     fn warning_level(&self) -> zbus::Result<u32>;
 
     #[zbus(property)]
     fn battery_level(&self) -> zbus::Result<u32>;
-
-    #[zbus(property)]
-    fn icon_name(&self) -> zbus::Result<String>;
 
     #[zbus(property)]
     fn charge_start_threshold(&self) -> zbus::Result<u32>;
@@ -159,22 +128,4 @@ pub trait Device {
 
     #[zbus(property)]
     fn voltage_max_design(&self) -> zbus::Result<f64>;
-}
-
-#[zbus::proxy(
-    interface = "org.freedesktop.UPower.KbdBacklight",
-    default_service = "org.freedesktop.UPower"
-)]
-pub trait KbdBacklight {
-    fn get_max_brightness(&self) -> zbus::Result<i32>;
-
-    fn get_brightness(&self) -> zbus::Result<i32>;
-
-    fn set_brightness(&self, value: i32) -> zbus::Result<()>;
-
-    #[zbus(signal)]
-    fn brightness_changed(&self, value: i32) -> zbus::Result<()>;
-
-    #[zbus(property)]
-    fn native_path(&self) -> zbus::Result<String>;
 }

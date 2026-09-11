@@ -4,5 +4,5 @@
 // SPDX-License-Identifier: MIT
 //
 
-pub mod power;
+pub mod battery;
 pub mod system_info;
