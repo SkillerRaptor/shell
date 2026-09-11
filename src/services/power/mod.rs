@@ -23,8 +23,8 @@ use crate::{
 };
 
 pub struct PowerService {
-    connection: Connection,
-    upower_proxy: UPowerProxy<'static>,
+    _connection: Connection,
+    _upower_proxy: UPowerProxy<'static>,
     cancellation_token: CancellationToken,
 
     pub devices: Property<Vec<Arc<Device>>>,
@@ -142,8 +142,8 @@ impl PowerService {
         }
 
         Ok(Self {
-            connection,
-            upower_proxy,
+            _connection: connection,
+            _upower_proxy: upower_proxy,
             cancellation_token,
 
             devices,
