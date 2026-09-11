@@ -4,10 +4,11 @@
 // SPDX-License-Identifier: MIT
 //
 
-mod device;
-mod kbd_backlight;
 mod proxy;
-mod types;
+
+pub mod device;
+pub mod kbd_backlight;
+pub mod types;
 
 use std::sync::Arc;
 
