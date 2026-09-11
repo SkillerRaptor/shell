@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 //
 
-use zbus::zvariant::OwnedObjectPath;
+use zbus::zvariant::{ObjectPath, OwnedObjectPath};
 
 #[zbus::proxy(
     interface = "org.freedesktop.UPower",
@@ -19,10 +19,10 @@ pub trait UPower {
     fn get_display_device(&self) -> zbus::Result<OwnedObjectPath>;
 
     #[zbus(signal)]
-    fn device_added(&self, device: OwnedObjectPath) -> zbus::Result<()>;
+    fn device_added(&self, device: ObjectPath<'_>) -> zbus::Result<()>;
 
     #[zbus(signal)]
-    fn device_removed(&self, device: OwnedObjectPath) -> zbus::Result<()>;
+    fn device_removed(&self, device: ObjectPath<'_>) -> zbus::Result<()>;
 
     #[zbus(property)]
     fn on_battery(&self) -> zbus::Result<bool>;

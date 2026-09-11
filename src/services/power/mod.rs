@@ -99,7 +99,7 @@ impl PowerService {
                     async_select::select! {
                         Some(change) = device_added_stream.next() => {
                             if let Ok(args) = change.args() {
-                                let path = args.device;
+                                let path = args.device.into();
                                 let device = Device::new(&connection, path, cancellation_token.child_token()).await.unwrap();
 
                                 let mut devices_vec = devices.read();
@@ -109,7 +109,7 @@ impl PowerService {
                         }
                         Some(change) = device_removed_stream.next() => {
                             if let Ok(args) = change.args() {
-                                let path = args.device;
+                                let path = args.device.into();
 
                                 let mut devices_vec = devices.read();
                                 devices_vec.retain(|device| {
