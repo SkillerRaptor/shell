@@ -13,11 +13,11 @@ use crate::core::property::Property;
 
 #[derive(Clone, Debug, Default)]
 pub struct NetworkData {
-    interface: String,
-    rx_bytes: u64,
-    tx_bytes: u64,
-    rx_bytes_per_second: u64,
-    tx_bytes_per_second: u64,
+    pub interface: String,
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+    pub rx_bytes_per_second: u64,
+    pub tx_bytes_per_second: u64,
 }
 
 pub fn spawn_network_proxy(
