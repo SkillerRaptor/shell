@@ -6,11 +6,14 @@
 
 use relm4::{gtk::prelude::*, prelude::*};
 
-use crate::{bar::BarModel, services::power::PowerService};
+use crate::{
+    bar::BarModel,
+    services::{power::PowerService, system_info::SystemInfoService},
+};
 
 pub struct AppModel {
     _power_service: PowerService,
-
+    _system_info_service: SystemInfoService,
     _bar: Controller<BarModel>,
 }
 
@@ -34,11 +37,13 @@ impl AsyncComponent for AppModel {
     ) -> AsyncComponentParts<Self> {
         // TODO: Error Handling
         let power_service = PowerService::new().await.unwrap();
+        let system_info_service = SystemInfoService::new().await.unwrap();
 
         let bar = BarModel::builder().launch(()).detach();
 
         let model = Self {
             _power_service: power_service,
+            _system_info_service: system_info_service,
             _bar: bar,
         };
 

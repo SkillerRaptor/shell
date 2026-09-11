@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: MIT
 //
 
-#![allow(unused)]
-
 mod app;
 mod bar;
 mod core;

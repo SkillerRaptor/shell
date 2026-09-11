@@ -5,3 +5,4 @@
 //
 
 pub mod power;
+pub mod system_info;

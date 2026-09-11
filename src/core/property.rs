@@ -9,7 +9,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-use relm4::tokio::sync::{
+use tokio::sync::{
     Notify,
     watch::{self, Receiver, Sender},
 };
