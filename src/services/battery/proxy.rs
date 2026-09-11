@@ -45,35 +45,8 @@ pub trait Device {
     #[zbus(property)]
     fn serial(&self) -> zbus::Result<String>;
 
-    #[zbus(property)]
-    fn update_time(&self) -> zbus::Result<u64>;
-
-    #[zbus(property)]
-    fn r#type(&self) -> zbus::Result<u32>;
-
-    #[zbus(property)]
-    fn power_supply(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn online(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
-    fn energy(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn energy_empty(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn energy_full(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn energy_full_design(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn energy_rate(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn charge_cycles(&self) -> zbus::Result<i32>;
+    #[zbus(property, name = "Type")]
+    fn kind(&self) -> zbus::Result<u32>;
 
     #[zbus(property)]
     fn time_to_empty(&self) -> zbus::Result<i64>;
@@ -88,9 +61,6 @@ pub trait Device {
     fn temperature(&self) -> zbus::Result<f64>;
 
     #[zbus(property)]
-    fn is_present(&self) -> zbus::Result<bool>;
-
-    #[zbus(property)]
     fn state(&self) -> zbus::Result<u32>;
 
     #[zbus(property)]
@@ -98,9 +68,6 @@ pub trait Device {
 
     #[zbus(property)]
     fn capacity(&self) -> zbus::Result<f64>;
-
-    #[zbus(property)]
-    fn battery_level(&self) -> zbus::Result<u32>;
 
     #[zbus(property)]
     fn charge_start_threshold(&self) -> zbus::Result<u32>;

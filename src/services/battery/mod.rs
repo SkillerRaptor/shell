@@ -7,7 +7,8 @@
 mod proxy;
 
 pub mod battery;
-pub mod display_device;
+pub mod peripheral;
+pub mod physical_battery;
 pub mod types;
 
 use std::sync::Arc;
@@ -15,15 +16,16 @@ use std::sync::Arc;
 use anyhow::Result;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
-use zbus::Connection;
+use zbus::{Connection, zvariant::OwnedObjectPath};
 
 use crate::{
     core::property::Property,
     services::battery::{
         battery::Battery,
-        display_device::DisplayDevice,
-        proxy::UPowerProxy,
-        types::Type,
+        peripheral::Peripheral,
+        physical_battery::PhysicalBattery,
+        proxy::{DeviceProxy, UPowerProxy},
+        types::Kind,
     },
 };
 
@@ -32,8 +34,9 @@ pub struct BatteryService {
     _upower_proxy: UPowerProxy<'static>,
     cancellation_token: CancellationToken,
 
-    pub display_device: Property<Arc<DisplayDevice>>,
-    pub batteries: Property<Vec<Arc<Battery>>>,
+    pub battery: Property<Arc<Battery>>,
+    pub physical_batteries: Property<Vec<Arc<PhysicalBattery>>>,
+    pub peripherals: Property<Vec<Arc<Peripheral>>>,
     pub on_battery: Property<bool>,
 }
 
@@ -43,26 +46,54 @@ impl BatteryService {
         let upower_proxy = UPowerProxy::new(&connection).await?;
         let cancellation_token = CancellationToken::new();
 
-        let display_device = {
+        let battery = {
             let path = upower_proxy.get_display_device().await?;
-            let display_device =
-                DisplayDevice::new(&connection, path, cancellation_token.child_token()).await?;
-            Property::new(Arc::new(display_device))
+            let battery = Battery::new(&connection, path, cancellation_token.child_token()).await?;
+            Property::new(Arc::new(battery))
         };
 
-        let batteries = {
+        let (physical_batteries, peripherals) = {
             let device_paths = upower_proxy.enumerate_devices().await?;
 
-            let mut batteries = Vec::with_capacity(device_paths.len());
+            let mut physical_batteries: Vec<Arc<PhysicalBattery>> = Vec::new();
+            let mut peripherals = Vec::new();
+
             for path in device_paths {
-                let battery =
-                    Battery::new(&connection, path, cancellation_token.child_token()).await?;
-                if battery.r#type.read() == Type::Battery {
-                    batteries.push(Arc::new(battery));
+                let device_proxy = DeviceProxy::builder(&connection)
+                    .path(path.clone())?
+                    .build()
+                    .await?;
+
+                let kind = Kind::from(device_proxy.kind().await?);
+
+                match kind {
+                    Kind::Battery => {
+                        let physical_battery = PhysicalBattery::new(
+                            &connection,
+                            path,
+                            cancellation_token.child_token(),
+                        )
+                        .await?;
+
+                        physical_batteries.push(Arc::new(physical_battery));
+                    }
+                    Kind::Mouse
+                    | Kind::Keyboard
+                    | Kind::Pen
+                    | Kind::Headset
+                    | Kind::Speakers
+                    | Kind::Headphones => {
+                        let peripheral = Peripheral::new(&connection, path).await?;
+                        peripherals.push(Arc::new(peripheral));
+                    }
+                    _ => {}
                 }
             }
 
-            Property::new(batteries)
+            (
+                Property::new(physical_batteries),
+                Property::new(peripherals),
+            )
         };
 
         let on_battery = Property::new(upower_proxy.on_battery().await?);
@@ -71,7 +102,8 @@ impl BatteryService {
             let connection = connection.clone();
             let cancellation_token = cancellation_token.child_token();
 
-            let batteries = batteries.clone();
+            let physical_batteries = physical_batteries.clone();
+            let peripherals = peripherals.clone();
             let on_battery = on_battery.clone();
 
             let mut device_added_stream = upower_proxy.receive_device_added().await?;
@@ -84,23 +116,82 @@ impl BatteryService {
                     async_select::select! {
                         Some(change) = device_added_stream.next() => {
                             if let Ok(args) = change.args() {
-                                let path = args.device.into();
-                                let battery = Battery::new(&connection, path, cancellation_token.child_token()).await.unwrap();
+                                let path: OwnedObjectPath = args.device.into();
 
-                                let mut batteries_vec = batteries.read();
-                                batteries_vec.push(Arc::new(battery));
-                                batteries.write_unconditional(batteries_vec);
+                                let device_proxy = DeviceProxy::builder(&connection)
+                                    .path(path.clone())
+                                    .unwrap()
+                                    .build()
+                                    .await
+                                    .unwrap();
+
+                                let kind = Kind::from(device_proxy.kind().await.unwrap());
+
+                                match kind {
+                                    Kind::Battery => {
+                                        let physical_battery = PhysicalBattery::new(
+                                            &connection,
+                                            path,
+                                            cancellation_token.child_token(),
+                                        )
+                                        .await
+                                        .unwrap();
+
+                                        let mut physical_batteries_vec = physical_batteries.read();
+                                        physical_batteries_vec.push(Arc::new(physical_battery));
+                                        physical_batteries.write_unconditional(physical_batteries_vec);
+                                    }
+                                    Kind::Mouse
+                                    | Kind::Keyboard
+                                    | Kind::Pen
+                                    | Kind::Headset
+                                    | Kind::Speakers
+                                    | Kind::Headphones => {
+                                        let peripheral = Peripheral::new(&connection, path).await.unwrap();
+
+                                        let mut peripherals_vec = peripherals.read();
+                                        peripherals_vec.push(Arc::new(peripheral));
+                                        peripherals.write_unconditional(peripherals_vec);
+                                    }
+                                    _ => {}
+                                }
                             }
                         }
                         Some(change) = device_removed_stream.next() => {
                             if let Ok(args) = change.args() {
-                                let path = args.device.into();
+                                let path: OwnedObjectPath = args.device.into();
 
-                                let mut batteries_vec = batteries.read();
-                                batteries_vec.retain(|battery| {
-                                    battery.path != path
-                                });
-                                batteries.write_unconditional(batteries_vec);
+                                let device_proxy = DeviceProxy::builder(&connection)
+                                    .path(path.clone())
+                                    .unwrap()
+                                    .build()
+                                    .await
+                                    .unwrap();
+
+                                let kind = Kind::from(device_proxy.kind().await.unwrap());
+
+                                match kind {
+                                    Kind::Battery => {
+                                        let mut physical_batteries_vec = physical_batteries.read();
+                                        physical_batteries_vec.retain(|physical_battery| {
+                                            physical_battery.path != path
+                                        });
+                                        physical_batteries.write_unconditional(physical_batteries_vec);
+                                    }
+                                    Kind::Mouse
+                                    | Kind::Keyboard
+                                    | Kind::Pen
+                                    | Kind::Headset
+                                    | Kind::Speakers
+                                    | Kind::Headphones => {
+                                        let mut peripherals_vec = peripherals.read();
+                                        peripherals_vec.retain(|peripheral| {
+                                            peripheral.path != path
+                                        });
+                                        peripherals.write_unconditional(peripherals_vec);
+                                    }
+                                    _ => {}
+                                }
                             }
                         }
                         Some(change) = on_battery_stream.next() => {
@@ -121,8 +212,9 @@ impl BatteryService {
             _upower_proxy: upower_proxy,
             cancellation_token,
 
-            display_device,
-            batteries,
+            battery,
+            physical_batteries,
+            peripherals,
             on_battery,
         })
     }

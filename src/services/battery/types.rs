@@ -5,7 +5,7 @@
 //
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Type {
+pub enum Kind {
     Unknown,
     LinePower,
     Battery,
@@ -37,38 +37,38 @@ pub enum Type {
     BluetoothGeneric,
 }
 
-impl From<u32> for Type {
+impl From<u32> for Kind {
     fn from(value: u32) -> Self {
         match value {
-            0 => Type::Unknown,
-            1 => Type::LinePower,
-            2 => Type::Battery,
-            3 => Type::Ups,
-            4 => Type::Monitor,
-            5 => Type::Mouse,
-            6 => Type::Keyboard,
-            7 => Type::Pda,
-            8 => Type::Phone,
-            9 => Type::MediaPlayer,
-            10 => Type::Tablet,
-            11 => Type::Computer,
-            12 => Type::GamingInput,
-            13 => Type::Pen,
-            14 => Type::Touchpad,
-            15 => Type::Modem,
-            16 => Type::Network,
-            17 => Type::Headset,
-            18 => Type::Speakers,
-            19 => Type::Headphones,
-            20 => Type::Video,
-            21 => Type::OtherAudio,
-            22 => Type::RemoteControl,
-            23 => Type::Printer,
-            24 => Type::Scanner,
-            25 => Type::Camera,
-            26 => Type::Wearable,
-            27 => Type::Toy,
-            28 => Type::BluetoothGeneric,
+            0 => Kind::Unknown,
+            1 => Kind::LinePower,
+            2 => Kind::Battery,
+            3 => Kind::Ups,
+            4 => Kind::Monitor,
+            5 => Kind::Mouse,
+            6 => Kind::Keyboard,
+            7 => Kind::Pda,
+            8 => Kind::Phone,
+            9 => Kind::MediaPlayer,
+            10 => Kind::Tablet,
+            11 => Kind::Computer,
+            12 => Kind::GamingInput,
+            13 => Kind::Pen,
+            14 => Kind::Touchpad,
+            15 => Kind::Modem,
+            16 => Kind::Network,
+            17 => Kind::Headset,
+            18 => Kind::Speakers,
+            19 => Kind::Headphones,
+            20 => Kind::Video,
+            21 => Kind::OtherAudio,
+            22 => Kind::RemoteControl,
+            23 => Kind::Printer,
+            24 => Kind::Scanner,
+            25 => Kind::Camera,
+            26 => Kind::Wearable,
+            27 => Kind::Toy,
+            28 => Kind::BluetoothGeneric,
             _ => unreachable!(),
         }
     }
@@ -95,32 +95,6 @@ impl From<u32> for State {
             4 => Self::FullyCharged,
             5 => Self::PendingCharge,
             6 => Self::PendingDischarge,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BatteryLevel {
-    Unknown,
-    None,
-    Low,
-    Critical,
-    Normal,
-    High,
-    Full,
-}
-
-impl From<u32> for BatteryLevel {
-    fn from(value: u32) -> Self {
-        match value {
-            0 => Self::Unknown,
-            1 => Self::None,
-            2 => Self::Low,
-            3 => Self::Critical,
-            4 => Self::Normal,
-            5 => Self::High,
-            6 => Self::Full,
             _ => unreachable!(),
         }
     }
