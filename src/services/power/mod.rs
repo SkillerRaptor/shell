@@ -30,8 +30,6 @@ pub struct PowerService {
     pub devices: Property<Vec<Arc<Device>>>,
     pub kbd_backlights: Property<Vec<Arc<KbdBacklight>>>,
     pub display_device: Property<Arc<Device>>,
-    pub critical_action: Property<String>,
-    pub daemon_version: Property<String>,
     pub on_battery: Property<bool>,
     pub lid_is_closed: Property<bool>,
     pub lid_is_present: Property<bool>,
@@ -76,8 +74,6 @@ impl PowerService {
             Property::new(display_device)
         };
 
-        let critical_action = Property::new(upower_proxy.get_critical_action().await?);
-        let daemon_version = Property::new(upower_proxy.daemon_version().await?);
         let on_battery = Property::new(upower_proxy.on_battery().await?);
         let lid_is_closed = Property::new(upower_proxy.lid_is_closed().await?);
         let lid_is_present = Property::new(upower_proxy.lid_is_present().await?);
@@ -87,7 +83,6 @@ impl PowerService {
             let cancellation_token = cancellation_token.child_token();
 
             let devices = devices.clone();
-            let daemon_version = daemon_version.clone();
             let on_battery = on_battery.clone();
             let lid_is_closed = lid_is_closed.clone();
             let lid_is_present = lid_is_present.clone();
@@ -95,7 +90,6 @@ impl PowerService {
             let mut device_added_stream = upower_proxy.receive_device_added().await?;
             let mut device_removed_stream = upower_proxy.receive_device_removed().await?;
 
-            let mut daemon_version_stream = upower_proxy.receive_daemon_version_changed().await;
             let mut on_battery_stream = upower_proxy.receive_on_battery_changed().await;
             let mut lid_is_closed_stream = upower_proxy.receive_lid_is_closed_changed().await;
             let mut lid_is_present_stream = upower_proxy.receive_lid_is_present_changed().await;
@@ -122,11 +116,6 @@ impl PowerService {
                                     device.path != path
                                 });
                                 devices.write_unconditional(devices_vec);
-                            }
-                        }
-                        Some(change) = daemon_version_stream.next() => {
-                            if let Ok(value) = change.get().await {
-                                daemon_version.write(value);
                             }
                         }
                         Some(change) = on_battery_stream.next() => {
@@ -160,8 +149,6 @@ impl PowerService {
             devices,
             kbd_backlights,
             display_device,
-            critical_action,
-            daemon_version,
             on_battery,
             lid_is_closed,
             lid_is_present,

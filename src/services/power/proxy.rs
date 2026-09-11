@@ -18,16 +18,11 @@ pub trait UPower {
 
     fn get_display_device(&self) -> zbus::Result<OwnedObjectPath>;
 
-    fn get_critical_action(&self) -> zbus::Result<String>;
-
     #[zbus(signal)]
     fn device_added(&self, device: OwnedObjectPath) -> zbus::Result<()>;
 
     #[zbus(signal)]
     fn device_removed(&self, device: OwnedObjectPath) -> zbus::Result<()>;
-
-    #[zbus(property)]
-    fn daemon_version(&self) -> zbus::Result<String>;
 
     #[zbus(property)]
     fn on_battery(&self) -> zbus::Result<bool>;
