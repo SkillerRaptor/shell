@@ -58,7 +58,7 @@ impl PhysicalBattery {
         let vendor = Property::new(device_proxy.vendor().await?);
         let model = Property::new(device_proxy.model().await?);
         let serial = Property::new(device_proxy.serial().await?);
-        let kind = Property::new(Kind::from(device_proxy.kind().await?));
+        let kind = Property::new(device_proxy.kind().await?);
         let time_to_empty = Property::new(Duration::from_secs(
             device_proxy.time_to_empty().await? as u64,
         ));
@@ -67,7 +67,7 @@ impl PhysicalBattery {
         ));
         let percentage = Property::new(device_proxy.percentage().await?);
         let temperature = Property::new(device_proxy.temperature().await?);
-        let state = Property::new(State::from(device_proxy.state().await?));
+        let state = Property::new(device_proxy.state().await?);
         let is_rechargeable = Property::new(device_proxy.is_rechargeable().await?);
         let capacity = Property::new(device_proxy.capacity().await?);
         let charge_start_threshold = Property::new(device_proxy.charge_start_threshold().await?);
@@ -143,7 +143,7 @@ impl PhysicalBattery {
                         }
                         Some(change) = state_stream.next() => {
                             if let Ok(value) = change.get().await {
-                                state.write(State::from(value));
+                                state.write(value);
                             }
                         }
                         Some(change) = is_rechargeable_stream.next() => {

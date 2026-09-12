@@ -41,8 +41,8 @@ impl Battery {
             .build()
             .await?;
 
-        let kind = Property::new(Kind::from(device_proxy.kind().await?));
-        let state = Property::new(State::from(device_proxy.state().await?));
+        let kind = Property::new(device_proxy.kind().await?);
+        let state = Property::new(device_proxy.state().await?);
         let percentage = Property::new(device_proxy.percentage().await?);
         let time_to_empty = Property::new(Duration::from_secs(
             device_proxy.time_to_empty().await? as u64,
@@ -69,7 +69,7 @@ impl Battery {
                     async_select::select! {
                         Some(change) = state_stream.next() => {
                             if let Ok(value) = change.get().await {
-                                state.write(State::from(value));
+                                state.write(value);
                             }
                         }
                         Some(change) = percentage_stream.next() => {

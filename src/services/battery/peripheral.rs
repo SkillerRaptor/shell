@@ -34,7 +34,7 @@ impl Peripheral {
         let vendor = Property::new(device_proxy.vendor().await?);
         let model = Property::new(device_proxy.model().await?);
         let serial = Property::new(device_proxy.serial().await?);
-        let kind = Property::new(Kind::from(device_proxy.kind().await?));
+        let kind = Property::new(device_proxy.kind().await?);
 
         Ok(Self {
             path,

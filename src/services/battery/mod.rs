@@ -64,7 +64,7 @@ impl BatteryService {
                     .build()
                     .await?;
 
-                let kind = Kind::from(device_proxy.kind().await?);
+                let kind = device_proxy.kind().await?;
 
                 match kind {
                     Kind::Battery => {
@@ -125,7 +125,7 @@ impl BatteryService {
                                     .await
                                     .unwrap();
 
-                                let kind = Kind::from(device_proxy.kind().await.unwrap());
+                                let kind = device_proxy.kind().await.unwrap();
 
                                 match kind {
                                     Kind::Battery => {
@@ -168,7 +168,7 @@ impl BatteryService {
                                     .await
                                     .unwrap();
 
-                                let kind = Kind::from(device_proxy.kind().await.unwrap());
+                                let kind = device_proxy.kind().await.unwrap();
 
                                 match kind {
                                     Kind::Battery => {

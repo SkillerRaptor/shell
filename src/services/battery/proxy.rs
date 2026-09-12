@@ -6,6 +6,8 @@
 
 use zbus::zvariant::{ObjectPath, OwnedObjectPath};
 
+use crate::services::battery::types::{Kind, State};
+
 #[zbus::proxy(
     interface = "org.freedesktop.UPower",
     default_service = "org.freedesktop.UPower",
@@ -46,7 +48,7 @@ pub trait Device {
     fn serial(&self) -> zbus::Result<String>;
 
     #[zbus(property, name = "Type")]
-    fn kind(&self) -> zbus::Result<u32>;
+    fn kind(&self) -> zbus::Result<Kind>;
 
     #[zbus(property)]
     fn time_to_empty(&self) -> zbus::Result<i64>;
@@ -61,7 +63,7 @@ pub trait Device {
     fn temperature(&self) -> zbus::Result<f64>;
 
     #[zbus(property)]
-    fn state(&self) -> zbus::Result<u32>;
+    fn state(&self) -> zbus::Result<State>;
 
     #[zbus(property)]
     fn is_rechargeable(&self) -> zbus::Result<bool>;
